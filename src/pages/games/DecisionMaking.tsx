@@ -132,7 +132,7 @@ const DecisionMaking = ({ onComplete }: DecisionMakingProps) => {
           <p className="text-white font-semibold text-lg leading-relaxed">{scenario.situation}</p>
         </div>
 
-        <div className="space-y-4 mb-8">
+        <div className="space-y-3 md:space-y-4 mb-8">
           <p className="text-sm text-gray-300 font-medium mb-4">당신의 선택은?</p>
           {scenario.options.map((option, idx) => (
             <button
@@ -154,9 +154,9 @@ const DecisionMaking = ({ onComplete }: DecisionMakingProps) => {
                   setSearchParams({ step: (currentIndex + 1).toString() });
                 }
               }}
-              className="w-full p-5 text-left bg-white text-black rounded-lg hover:bg-gray-200 transition-all duration-200 font-bold btn-glow-white"
+              className="w-full p-4 md:p-5 text-left text-sm md:text-base bg-white text-black rounded-lg hover:bg-gray-200 transition-all duration-200 font-bold btn-glow-white"
             >
-              <span className="text-white font-bold mr-3">{String.fromCharCode(65 + idx)}.</span>
+              <span className="text-white font-bold mr-2 md:mr-3">{String.fromCharCode(65 + idx)}.</span>
               {option.text}
             </button>
           ))}

@@ -118,12 +118,12 @@ const StroopTest = ({ onComplete }: StroopTestProps) => {
             {item.text}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3 mb-6">
             {colors.map(color => (
               <button
                 key={color}
                 onClick={() => handleAnswer(color)}
-                className="w-full py-3 px-6 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 font-bold border border-gray-600"
+                className="w-full py-3 px-4 md:py-3 md:px-6 text-base md:text-lg bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 font-bold border border-gray-600"
               >
                 {colorDisplay[color]}
               </button>

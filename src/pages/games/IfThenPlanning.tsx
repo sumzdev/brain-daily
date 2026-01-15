@@ -98,7 +98,7 @@ const IfThenPlanning = ({ onComplete }: IfThenPlanningProps) => {
           <p className="text-white font-bold text-lg">{scenario.trigger}</p>
         </div>
 
-        <div className="space-y-4 mb-8">
+        <div className="space-y-3 md:space-y-4 mb-8">
           {scenario.options.map((option, idx) => (
             <button
               key={idx}
@@ -119,7 +119,7 @@ const IfThenPlanning = ({ onComplete }: IfThenPlanningProps) => {
                   setSearchParams({ step: (currentIndex + 1).toString() });
                 }
               }}
-              className="w-full p-5 text-left bg-white text-black rounded-lg hover:bg-gray-200 transition-all duration-200 font-bold btn-glow-white"
+              className="w-full p-4 md:p-5 text-left text-sm md:text-base bg-white text-black rounded-lg hover:bg-gray-200 transition-all duration-200 font-bold btn-glow-white"
             >
               THEN {option.text}
             </button>

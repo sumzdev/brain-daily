@@ -24,8 +24,8 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 shadow-xl border border-gray-700 hover:border-red-500/50 transition-all duration-300">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 md:p-8 shadow-xl border border-gray-700 hover:border-red-500/50 transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400 uppercase tracking-wide mb-2">연속 완료</p>
@@ -35,7 +35,7 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, 
             <Flame className="w-12 h-12 text-red-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 shadow-xl border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 md:p-8 shadow-xl border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400 uppercase tracking-wide mb-2">총 완료 세션</p>
@@ -45,7 +45,7 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, 
             <CheckCircle2 className="w-12 h-12 text-blue-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 shadow-xl border border-gray-700 hover:border-purple-500/50 transition-all duration-300">
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 md:p-8 shadow-xl border border-gray-700 hover:border-purple-500/50 transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400 uppercase tracking-wide mb-2">오늘 진행</p>
@@ -58,13 +58,13 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, 
       </div>
 
       {/* Daily Program */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 shadow-xl border border-gray-700">
-        <h2 className="text-3xl font-extrabold text-white mb-8 tracking-tight">오늘의 인지 훈련</h2>
-        <div className="space-y-4">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 md:p-8 shadow-xl border border-gray-700">
+        <h2 className="text-3xl font-extrabold text-white mb-6 md:mb-8 tracking-tight">오늘의 인지 훈련</h2>
+        <div className="space-y-3 md:space-y-4">
           {dailyProgram.map((game: any) => (
             <div
               key={game.id}
-              className="flex items-center justify-between p-6 bg-black/40 rounded-xl border border-gray-700 hover:border-purple-500/50 transition-all duration-300 group"
+              className="flex items-center justify-between p-4 md:p-6 bg-black/40 rounded-xl border border-gray-700 hover:border-purple-500/50 transition-all duration-300 group"
             >
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition">{game.name}</h3>
@@ -73,25 +73,25 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, 
                   <p className="text-sm text-green-400 font-semibold mt-2">점수: {game.score}</p>
                 )}
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2 md:gap-3">
                 {game.status === 'pending' ? (
                   <button
                     onClick={() => onStartGame(game.id)}
-                    className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2 font-bold border border-gray-600"
+                    className="px-4 py-2 md:px-6 md:py-3 text-sm md:text-base bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2 font-bold border border-gray-600"
                   >
                     <Play className="w-4 h-4" />
                     시작
                   </button>
                 ) : (
                   <>
-                    <div className="px-6 py-3 text-green-400 font-bold flex items-center gap-2 border border-green-500/30 rounded-lg">
+                    <div className="px-4 py-2 md:px-6 md:py-3 text-sm md:text-base text-green-400 font-bold flex items-center gap-2 border border-green-500/30 rounded-lg">
                       <CheckCircle2 className="w-5 h-5" />
                       완료
                     </div>
                     {game.results && (
                       <button
                         onClick={() => setSelectedGameDetails(game)}
-                        className="px-4 py-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition font-semibold text-sm border border-gray-700"
+                        className="px-3 py-2 md:px-4 md:py-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition font-semibold text-sm border border-gray-700"
                       >
                         상세보기
                       </button>
@@ -104,7 +104,7 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, 
         </div>
 
         {allCompleted && (
-          <div className="mt-8 p-6 bg-gradient-to-r from-green-900/50 to-emerald-900/50 border border-green-500/30 rounded-xl text-center">
+          <div className="mt-6 md:mt-8 p-4 md:p-6 bg-gradient-to-r from-green-900/50 to-emerald-900/50 border border-green-500/30 rounded-xl text-center">
             <p className="text-white font-bold text-lg">🎉 오늘의 훈련을 모두 완료했습니다!</p>
             <p className="text-sm text-gray-300 mt-2">내일도 함께 전두엽을 강화해보세요.</p>
           </div>
@@ -112,10 +112,10 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, 
       </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-4 md:gap-6">
         <button
           onClick={() => onNavigate('pomodoro')}
-          className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 shadow-xl border border-gray-700 hover:border-blue-500/50 transition-all duration-300 text-center group"
+          className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 md:p-8 shadow-xl border border-gray-700 hover:border-blue-500/50 transition-all duration-300 text-center group"
         >
           <Clock className="w-10 h-10 text-blue-500 mx-auto mb-4 group-hover:scale-110 transition" />
           <p className="font-bold text-white text-lg mb-1">포모도로</p>
@@ -123,7 +123,7 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, 
         </button>
         <button
           onClick={() => onNavigate('stats')}
-          className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 shadow-xl border border-gray-700 hover:border-purple-500/50 transition-all duration-300 text-center group"
+          className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 md:p-8 shadow-xl border border-gray-700 hover:border-purple-500/50 transition-all duration-300 text-center group"
         >
           <BarChart3 className="w-10 h-10 text-purple-500 mx-auto mb-4 group-hover:scale-110 transition" />
           <p className="font-bold text-white text-lg mb-1">통계</p>
@@ -135,7 +135,7 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, 
       <div className="flex justify-center">
         <button
           onClick={onGenerateDummyData}
-          className="px-6 py-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-200 text-sm font-medium border border-gray-700"
+          className="px-4 py-2 md:px-6 md:py-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-200 text-sm font-medium border border-gray-700"
         >
           🎲 더미 데이터 생성 (테스트용)
         </button>

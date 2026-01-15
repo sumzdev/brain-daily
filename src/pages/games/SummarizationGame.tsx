@@ -101,7 +101,7 @@ const SummarizationGame = ({ onComplete }: SummarizationGameProps) => {
           </div>
         )}
 
-        <div className="flex gap-4 mt-8">
+        <div className="flex gap-3 md:gap-4 mt-8">
           <button
             onClick={() => {
               if (userSummary.length < 10) {
@@ -125,7 +125,7 @@ const SummarizationGame = ({ onComplete }: SummarizationGameProps) => {
                 setFeedback(null);
               }
             }}
-            className="flex-1 px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold btn-glow-white"
+            className="flex-1 px-6 py-3 md:px-8 md:py-4 text-base md:text-lg bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold btn-glow-white"
           >
             다음
           </button>

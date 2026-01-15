@@ -82,7 +82,7 @@ const EmotionLabelingGame = ({ onComplete }: EmotionLabelingGameProps) => {
           <p className="text-white font-semibold text-lg">{scenario.situation}</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-3 md:gap-4 mb-8">
           {scenario.emotions.map((emotion, idx) => (
             <button
               key={idx}
@@ -93,7 +93,7 @@ const EmotionLabelingGame = ({ onComplete }: EmotionLabelingGameProps) => {
                   setSelectedEmotions([...selectedEmotions, emotion]);
                 }
               }}
-              className={`p-5 rounded-lg font-bold transition-all duration-200 btn-glow-white ${
+              className={`p-4 md:p-5 text-sm md:text-base rounded-lg font-bold transition-all duration-200 btn-glow-white ${
                 selectedEmotions.includes(emotion)
                   ? 'bg-white text-black border-4 border-purple-500'
                   : 'bg-white text-black hover:bg-gray-200 border-4 border-transparent'

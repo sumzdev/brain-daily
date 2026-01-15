@@ -115,7 +115,7 @@ const BreathingMeditation = ({ onComplete }: BreathingMeditationProps) => {
             }
             setIsRunning(!isRunning);
           }}
-          className={`px-8 py-4 text-lg font-bold rounded-xl transition ${
+          className={`px-6 py-3 md:px-8 md:py-4 text-base md:text-lg font-bold rounded-xl transition ${
             isRunning
               ? 'bg-red-600 text-white hover:bg-red-700 btn-glow-red'
               : 'bg-white text-black hover:bg-gray-200 btn-glow-white'

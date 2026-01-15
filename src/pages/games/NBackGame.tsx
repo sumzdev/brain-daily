@@ -111,7 +111,7 @@ const NBackGame = ({ onComplete }: NBackGameProps) => {
           {!isAutoPlaying && currentRound < 2 && (
             <button
               onClick={() => setIsAutoPlaying(true)}
-              className="px-8 py-4 bg-white text-black text-lg font-bold rounded-xl hover:bg-gray-200 transition mb-6 btn-glow-white"
+              className="px-6 py-3 md:px-8 md:py-4 bg-white text-black text-base md:text-lg font-bold rounded-xl hover:bg-gray-200 transition mb-6 btn-glow-white"
             >
               시작하기
             </button>
@@ -160,18 +160,18 @@ const NBackGame = ({ onComplete }: NBackGameProps) => {
               )}
 
               {currentRound >= 2 && (
-                <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+                <div className="grid grid-cols-2 gap-3 md:gap-4 max-w-sm mx-auto">
                   <button
                     onClick={() => handleAnswer(true)}
                     disabled={feedback !== null}
-                    className="py-4 bg-green-600 text-white text-lg rounded-xl hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 font-bold transition btn-glow-green"
+                    className="py-3 md:py-4 bg-green-600 text-white text-base md:text-lg rounded-xl hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 font-bold transition btn-glow-green"
                   >
                     일치 ✓
                   </button>
                   <button
                     onClick={() => handleAnswer(false)}
                     disabled={feedback !== null}
-                    className="py-4 bg-red-600 text-white text-lg rounded-xl hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 font-bold transition btn-glow-red"
+                    className="py-3 md:py-4 bg-red-600 text-white text-base md:text-lg rounded-xl hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 font-bold transition btn-glow-red"
                   >
                     불일치 ✗
                   </button>
