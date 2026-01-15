@@ -1,11 +1,10 @@
 # BrainDaily - 전두엽 강화 훈련 서비스
 
-숏츠 중독으로 약해진 전두엽을 매일 강화하는 인지 훈련 서비스입니다.
+전두엽을 매일 강화하는 인지 훈련 서비스입니다.
 
 ## 설치 및 실행
 
 ```bash
-cd /Users/sumz/Study/brain-daily
 npm install
 npm start
 ```

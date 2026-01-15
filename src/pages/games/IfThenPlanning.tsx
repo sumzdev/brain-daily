@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface IfThenPlanningProps {
-  onComplete: (score: number, time: number) => void;
+  onComplete: (score: number, time: number, results?: any) => void;
 }
 
 const IfThenPlanning = ({ onComplete }: IfThenPlanningProps) => {
@@ -54,6 +54,7 @@ const IfThenPlanning = ({ onComplete }: IfThenPlanningProps) => {
   const [score, setScore] = useState(0);
   const [startTime] = useState(Date.now());
   const [testEnded, setTestEnded] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
 
   useEffect(() => {
     if (!searchParams.get('step')) {
@@ -74,8 +75,8 @@ const IfThenPlanning = ({ onComplete }: IfThenPlanningProps) => {
           <p className="text-gray-300 mb-6">소요 시간: {timeTaken}초</p>
           <p className="text-sm text-gray-300 mb-8 p-4 bg-orange-900/30 rounded-xl border border-gray-700">💡 감정이 폭발하기 전 전두엽이 개입할 시간을 벌어주는 훈련입니다</p>
           <button
-            onClick={() => onComplete(Math.round((score / 50) * 100), timeTaken)}
-            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg"
+            onClick={() => onComplete(Math.round((score / 50) * 100), timeTaken, results)}
+            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg btn-glow-white"
           >
             대시보드로 돌아가기
           </button>
@@ -102,14 +103,23 @@ const IfThenPlanning = ({ onComplete }: IfThenPlanningProps) => {
             <button
               key={idx}
               onClick={() => {
-                setScore(score + option.score);
+                const newScore = score + option.score;
+                setScore(newScore);
+                setResults(prev => [...prev, {
+                  correct: option.score === 10,
+                  details: {
+                    trigger: scenario.trigger,
+                    userChoice: option.text,
+                    scoreEarned: option.score,
+                  }
+                }]);
                 if (currentIndex >= scenarios.length - 1) {
                   setTestEnded(true);
                 } else {
                   setSearchParams({ step: (currentIndex + 1).toString() });
                 }
               }}
-              className="w-full p-5 text-left bg-black/40 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 rounded-xl transition font-medium text-white"
+              className="w-full p-5 text-left bg-black/40 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 rounded-xl transition font-medium text-white btn-glow-purple"
             >
               THEN {option.text}
             </button>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface EmotionLabelingGameProps {
-  onComplete: (score: number, time: number) => void;
+  onComplete: (score: number, time: number, results?: any) => void;
 }
 
 const EmotionLabelingGame = ({ onComplete }: EmotionLabelingGameProps) => {
@@ -40,6 +40,7 @@ const EmotionLabelingGame = ({ onComplete }: EmotionLabelingGameProps) => {
   const [startTime] = useState(Date.now());
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
   const [testEnded, setTestEnded] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
 
   useEffect(() => {
     if (!searchParams.get('step')) {
@@ -59,8 +60,8 @@ const EmotionLabelingGame = ({ onComplete }: EmotionLabelingGameProps) => {
           </div>
           <p className="text-gray-300 mb-8">소요 시간: {timeTaken}초</p>
           <button
-            onClick={() => onComplete(Math.round((score / scenarios.length) * 100), timeTaken)}
-            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg"
+            onClick={() => onComplete(Math.round((score / scenarios.length) * 100), timeTaken, results)}
+            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg btn-glow-white"
           >
             대시보드로 돌아가기
           </button>
@@ -113,6 +114,15 @@ const EmotionLabelingGame = ({ onComplete }: EmotionLabelingGameProps) => {
               setScore(score + 1);
             }
 
+            setResults(prev => [...prev, {
+              correct: isCorrect,
+              details: {
+                situation: scenario.situation,
+                userEmotions: selectedEmotions.join(', '),
+                correctEmotions: scenario.correct.join(', '),
+              }
+            }]);
+
             if (currentIndex >= scenarios.length - 1) {
               setTestEnded(true);
             } else {
@@ -121,7 +131,7 @@ const EmotionLabelingGame = ({ onComplete }: EmotionLabelingGameProps) => {
             }
           }}
           disabled={selectedEmotions.length === 0}
-          className="w-full px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 disabled:bg-gray-700 disabled:text-gray-500 transition font-bold text-lg"
+          className="w-full px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 disabled:bg-gray-700 disabled:text-gray-500 transition font-bold text-lg btn-glow-white"
         >
           확인
         </button>

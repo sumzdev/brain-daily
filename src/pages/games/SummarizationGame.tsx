@@ -53,7 +53,7 @@ const SummarizationGame = ({ onComplete }: SummarizationGameProps) => {
 
           <button
             onClick={() => onComplete(Math.round((score / texts.length) * 100), timeTaken, results)}
-            className="w-full px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg"
+            className="w-full px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg btn-glow-white"
           >
             대시보드로 돌아가기
           </button>
@@ -125,7 +125,7 @@ const SummarizationGame = ({ onComplete }: SummarizationGameProps) => {
                 setFeedback(null);
               }
             }}
-            className="flex-1 px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold"
+            className="flex-1 px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold btn-glow-white"
           >
             다음
           </button>

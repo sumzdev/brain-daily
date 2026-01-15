@@ -110,11 +110,11 @@ const App = () => {
           />
           <Route
             path="/games/nback"
-            element={<NBackGame onComplete={(score, time) => handleGameComplete('nback', score, time)} />}
+            element={<NBackGame onComplete={(score, time, results) => handleGameComplete('nback', score, time, results)} />}
           />
           <Route
             path="/games/decision"
-            element={<DecisionMaking onComplete={(score, time) => handleGameComplete('decision', score, time)} />}
+            element={<DecisionMaking onComplete={(score, time, results) => handleGameComplete('decision', score, time, results)} />}
           />
           <Route
             path="/games/summarization"
@@ -122,15 +122,15 @@ const App = () => {
           />
           <Route
             path="/games/emotion"
-            element={<EmotionLabelingGame onComplete={(score, time) => handleGameComplete('emotion', score, time)} />}
+            element={<EmotionLabelingGame onComplete={(score, time, results) => handleGameComplete('emotion', score, time, results)} />}
           />
           <Route
             path="/games/breathing"
-            element={<BreathingMeditation onComplete={(score, time) => handleGameComplete('breathing', score, time)} />}
+            element={<BreathingMeditation onComplete={(score, time, results) => handleGameComplete('breathing', score, time, results)} />}
           />
           <Route
             path="/games/ifthen"
-            element={<IfThenPlanning onComplete={(score, time) => handleGameComplete('ifThen', score, time)} />}
+            element={<IfThenPlanning onComplete={(score, time, results) => handleGameComplete('ifThen', score, time, results)} />}
           />
         </Routes>
       </div>

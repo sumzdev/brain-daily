@@ -77,7 +77,7 @@ const StroopTest = ({ onComplete }: StroopTestProps) => {
 
           <button
             onClick={() => onComplete(score, timeTaken, results)}
-            className="w-full px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg"
+            className="w-full px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg btn-glow-white"
           >
             대시보드로 돌아가기
           </button>
@@ -118,12 +118,12 @@ const StroopTest = ({ onComplete }: StroopTestProps) => {
             {item.text}
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             {colors.map(color => (
               <button
                 key={color}
                 onClick={() => handleAnswer(color)}
-                className="py-4 px-6 bg-black/40 hover:bg-gray-700 text-white rounded-xl font-bold transition border border-gray-600"
+                className="w-full py-4 px-6 bg-black/40 hover:bg-gray-700 text-white rounded-xl font-bold transition border border-gray-600 btn-glow-white"
               >
                 {colorDisplay[color]}
               </button>

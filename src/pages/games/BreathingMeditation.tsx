@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface BreathingMeditationProps {
-  onComplete: (score: number, time: number) => void;
+  onComplete: (score: number, time: number, results?: any) => void;
 }
 
 const BreathingMeditation = ({ onComplete }: BreathingMeditationProps) => {
@@ -66,8 +66,8 @@ const BreathingMeditation = ({ onComplete }: BreathingMeditationProps) => {
           </div>
           <p className="text-gray-300 mb-8">축하합니다! 전두엽의 '주의 제어력'을 훈련했습니다 🧘</p>
           <button
-            onClick={() => onComplete(cycles * 20, timeTaken)}
-            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg"
+            onClick={() => onComplete(cycles * 20, timeTaken, [{ correct: true, details: { cycles, timeTaken } }])}
+            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg btn-glow-white"
           >
             대시보드로 돌아가기
           </button>
@@ -117,8 +117,8 @@ const BreathingMeditation = ({ onComplete }: BreathingMeditationProps) => {
           }}
           className={`px-8 py-4 text-lg font-bold rounded-xl transition ${
             isRunning
-              ? 'bg-red-600 text-white hover:bg-red-700'
-              : 'bg-white text-black hover:bg-gray-200'
+              ? 'bg-red-600 text-white hover:bg-red-700 btn-glow-red'
+              : 'bg-white text-black hover:bg-gray-200 btn-glow-white'
           }`}
         >
           {isRunning ? '일시정지' : phase === 'ready' ? '시작' : '재개'}

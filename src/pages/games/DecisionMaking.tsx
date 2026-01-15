@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface DecisionMakingProps {
-  onComplete: (score: number, time: number) => void;
+  onComplete: (score: number, time: number, results?: any) => void;
 }
 
 const DecisionMaking = ({ onComplete }: DecisionMakingProps) => {
@@ -78,6 +78,7 @@ const DecisionMaking = ({ onComplete }: DecisionMakingProps) => {
   const [score, setScore] = useState(0);
   const [startTime] = useState(Date.now());
   const [gameEnded, setGameEnded] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
 
   useEffect(() => {
     if (!searchParams.get('step')) {
@@ -108,8 +109,8 @@ const DecisionMaking = ({ onComplete }: DecisionMakingProps) => {
           </div>
           <p className="text-gray-300 mb-8">소요 시간: {timeTaken}초</p>
           <button
-            onClick={() => onComplete(percentage, timeTaken)}
-            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg"
+            onClick={() => onComplete(percentage, timeTaken, results)}
+            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg btn-glow-white"
           >
             완료
           </button>
@@ -137,14 +138,23 @@ const DecisionMaking = ({ onComplete }: DecisionMakingProps) => {
             <button
               key={idx}
               onClick={() => {
-                setScore(score + option.value);
+                const newScore = score + option.value;
+                setScore(newScore);
+                setResults(prev => [...prev, {
+                  correct: option.value === 10,
+                  details: {
+                    situation: scenario.situation,
+                    userChoice: option.text,
+                    scoreEarned: option.value,
+                  }
+                }]);
                 if (currentIndex >= scenarios.length - 1) {
                   setGameEnded(true);
                 } else {
                   setSearchParams({ step: (currentIndex + 1).toString() });
                 }
               }}
-              className="w-full p-5 text-left bg-black/40 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 rounded-xl transition-all font-medium text-white hover:shadow-lg"
+              className="w-full p-5 text-left bg-black/40 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 rounded-xl transition-all font-medium text-white hover:shadow-lg btn-glow-purple"
             >
               <span className="text-white font-bold mr-3">{String.fromCharCode(65 + idx)}.</span>
               {option.text}

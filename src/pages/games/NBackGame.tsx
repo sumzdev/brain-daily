@@ -2,18 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface NBackGameProps {
-  onComplete: (score: number, time: number) => void;
+  onComplete: (score: number, time: number, results?: any) => void;
 }
 
 const NBackGame = ({ onComplete }: NBackGameProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentRound = parseInt(searchParams.get('step') || '0');
+  const [currentRound, setCurrentRound] = useState(0);
   const [sequence, setSequence] = useState<number[]>([]);
   const [score, setScore] = useState(0);
   const [startTime] = useState(Date.now());
   const [gameEnded, setGameEnded] = useState(false);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [feedback, setFeedback] = useState<{ correct: boolean; message: string } | null>(null);
+  const [results, setResults] = useState<any[]>([]);
 
   const generateSequence = useCallback(() => {
     const newSeq = [];
@@ -38,14 +39,14 @@ const NBackGame = ({ onComplete }: NBackGameProps) => {
   useEffect(() => {
     if (isAutoPlaying && currentRound < 2) {
       const timer = setTimeout(() => {
-        setSearchParams({ step: (currentRound + 1).toString() });
+        setCurrentRound(currentRound + 1);
       }, 1500);
       return () => clearTimeout(timer);
     } else if (isAutoPlaying && currentRound >= 2) {
       setIsAutoPlaying(false);
     }
     return undefined;
-  }, [isAutoPlaying, currentRound, setSearchParams]);
+  }, [isAutoPlaying, currentRound]);
 
   const handleAnswer = useCallback((isMatch: boolean) => {
     const isCorrect = (sequence[currentRound] === sequence[currentRound - 2]) === isMatch;
@@ -58,15 +59,24 @@ const NBackGame = ({ onComplete }: NBackGameProps) => {
       setFeedback({ correct: false, message: `✗ 오답! 정답: ${expected}` });
     }
 
+    setResults(prev => [...prev, {
+      correct: isCorrect,
+      details: {
+        round: currentRound + 1,
+        userAnswer: isMatch ? '일치' : '불일치',
+        correctAnswer: sequence[currentRound] === sequence[currentRound - 2] ? '일치' : '불일치',
+      }
+    }]);
+
     setTimeout(() => {
       if (currentRound >= 14) {
         setGameEnded(true);
       } else {
-        setSearchParams({ step: (currentRound + 1).toString() });
+        setCurrentRound(currentRound + 1);
         setFeedback(null);
       }
     }, 1200);
-  }, [currentRound, sequence, setSearchParams]);
+  }, [currentRound, sequence]);
 
   if (gameEnded) {
     const timeTaken = Math.round((Date.now() - startTime) / 1000);
@@ -81,8 +91,8 @@ const NBackGame = ({ onComplete }: NBackGameProps) => {
           </div>
           <p className="text-gray-300 mb-8">소요 시간: {timeTaken}초</p>
           <button
-            onClick={() => onComplete(Math.round((score / 13) * 100), timeTaken)}
-            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg"
+            onClick={() => onComplete(Math.round((score / 13) * 100), timeTaken, results)}
+            className="px-8 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition font-bold text-lg btn-glow-white"
           >
             완료
           </button>
@@ -101,7 +111,7 @@ const NBackGame = ({ onComplete }: NBackGameProps) => {
           {!isAutoPlaying && currentRound < 2 && (
             <button
               onClick={() => setIsAutoPlaying(true)}
-              className="px-8 py-4 bg-white text-black text-lg font-bold rounded-xl hover:bg-gray-200 transition mb-6"
+              className="px-8 py-4 bg-white text-black text-lg font-bold rounded-xl hover:bg-gray-200 transition mb-6 btn-glow-white"
             >
               시작하기
             </button>
@@ -154,14 +164,14 @@ const NBackGame = ({ onComplete }: NBackGameProps) => {
                   <button
                     onClick={() => handleAnswer(true)}
                     disabled={feedback !== null}
-                    className="py-4 bg-green-600 text-white text-lg rounded-xl hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 font-bold transition"
+                    className="py-4 bg-green-600 text-white text-lg rounded-xl hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 font-bold transition btn-glow-green"
                   >
                     일치 ✓
                   </button>
                   <button
                     onClick={() => handleAnswer(false)}
                     disabled={feedback !== null}
-                    className="py-4 bg-red-600 text-white text-lg rounded-xl hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 font-bold transition"
+                    className="py-4 bg-red-600 text-white text-lg rounded-xl hover:bg-red-700 disabled:bg-gray-700 disabled:text-gray-500 font-bold transition btn-glow-red"
                   >
                     불일치 ✗
                   </button>

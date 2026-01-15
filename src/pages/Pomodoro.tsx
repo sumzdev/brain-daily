@@ -43,7 +43,7 @@ const Pomodoro = () => {
         <div className="flex gap-4 justify-center mb-10">
           <button
             onClick={() => setIsRunning(!isRunning)}
-            className="px-10 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition-all duration-200 font-bold text-lg"
+            className="px-10 py-4 bg-white text-black rounded-xl hover:bg-gray-200 transition-all duration-200 font-bold text-lg btn-glow-white"
           >
             {isRunning ? "일시정지" : "시작"}
           </button>
@@ -53,7 +53,7 @@ const Pomodoro = () => {
               setTimeLeft(workDuration * 60);
               setIsWorkSession(true);
             }}
-            className="px-10 py-4 bg-gray-700 text-white rounded-xl hover:bg-gray-600 transition-all duration-200 font-bold text-lg border border-gray-600"
+            className="px-10 py-4 bg-gray-700 text-white rounded-xl hover:bg-gray-600 transition-all duration-200 font-bold text-lg border border-gray-600 btn-glow-red"
           >
             리셋
           </button>

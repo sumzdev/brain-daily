@@ -76,7 +76,7 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry }
                 {game.status === 'pending' ? (
                   <button
                     onClick={() => onStartGame(game.id)}
-                    className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center gap-2 font-bold"
+                    className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center gap-2 font-bold btn-glow-white"
                   >
                     <Play className="w-4 h-4" />
                     시작
