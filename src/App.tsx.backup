@@ -1,0 +1,1448 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Brain, BarChart3, Flame, Clock, CheckCircle2, Play } from 'lucide-react';
+
+// Types
+type GameType = 'stroop' | 'nback' | 'decision' | 'summarization' | 'emotion' | 'breathing' | 'ifThen';
+type GameStatus = 'pending' | 'playing' | 'completed';
+
+interface GameResult {
+  correct: boolean;
+  details: any;
+}
+
+interface DailyProgram {
+  id: GameType;
+  name: string;
+  description: string;
+  status: GameStatus;
+  score?: number;
+  time?: number;
+  results?: GameResult[];
+}
+
+interface UserStats {
+  streak: number;
+  totalSessionsCompleted: number;
+  lastCompletedDate: string;
+  scores: Record<string, number[]>;
+}
+
+// Main App
+const BrainDaily = () => {
+  const [currentView, setCurrentView] = useState<'dashboard' | 'game' | 'pomodoro' | 'stats'>('dashboard');
+  const [currentGame, setCurrentGame] = useState<GameType | null>(null);
+  const [dailyProgram, setDailyProgram] = useState<DailyProgram[]>([
+    { id: 'stroop', name: 'Stroop Test', description: '색상 인지 능력 강화', status: 'pending' },
+    { id: 'nback', name: 'N-back Game', description: '작업 기억 훈련', status: 'pending' },
+    { id: 'decision', name: 'Decision Making', description: '즉각적 보상 vs 장기적 이익', status: 'pending' },
+    { id: 'summarization', name: '요약 훈련', description: '복잡한 정보 처리 능력', status: 'pending' },
+    { id: 'emotion', name: '감정 라벨링', description: '편도체 진정 및 감정 조절', status: 'pending' },
+  ]);
+  const [userStats, setUserStats] = useState<UserStats>(() => {
+    const saved = localStorage.getItem('brainDaily_stats');
+    return saved ? JSON.parse(saved) : {
+      streak: 0,
+      totalSessionsCompleted: 0,
+      lastCompletedDate: '',
+      scores: {},
+    };
+  });
+
+  // LocalStorage 저장
+  useEffect(() => {
+    localStorage.setItem('brainDaily_stats', JSON.stringify(userStats));
+  }, [userStats]);
+
+  // 오늘 이미 완료했는지 확인
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const wasCompletedToday = userStats.lastCompletedDate === today;
+    
+    if (!wasCompletedToday) {
+      // 새로운 날이면 리셋
+      setDailyProgram(prev => prev.map(p => ({ ...p, status: 'pending' })));
+    }
+  }, []);
+
+  const handleGameComplete = (gameId: GameType, score: number, time: number, results?: GameResult[]) => {
+    setDailyProgram(prev => 
+      prev.map(p => p.id === gameId ? { ...p, status: 'completed', score, time, results } : p)
+    );
+
+    setUserStats(prev => ({
+      ...prev,
+      scores: {
+        ...prev.scores,
+        [gameId]: [...(prev.scores[gameId] || []), score],
+      },
+    }));
+
+    // 모든 게임 완료 확인
+    const allCompleted = dailyProgram.every(p => 
+      p.id === gameId ? true : p.status === 'completed'
+    );
+
+    if (allCompleted) {
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const isConsecutive = userStats.lastCompletedDate === yesterday;
+
+      setUserStats(prev => ({
+        ...prev,
+        totalSessionsCompleted: prev.totalSessionsCompleted + 1,
+        lastCompletedDate: today,
+        streak: isConsecutive ? prev.streak + 1 : 1,
+      }));
+    }
+
+    setCurrentView('dashboard');
+  };
+
+  const renderContent = () => {
+    if (currentView === 'game' && currentGame) {
+      return <GameRenderer gameId={currentGame} onComplete={handleGameComplete} />;
+    }
+    if (currentView === 'pomodoro') {
+      return <PomodoroTimer />;
+    }
+    if (currentView === 'stats') {
+      return <StatisticsView userStats={userStats} />;
+    }
+    
+    return (
+      <DashboardView
+        dailyProgram={dailyProgram}
+        userStats={userStats}
+        onStartGame={(gameId) => {
+          setCurrentGame(gameId as GameType);
+          setCurrentView('game');
+        }}
+        onNavigate={(view) => setCurrentView(view as any)}
+        onRetry={(gameId) => {
+          setCurrentGame(gameId as GameType);
+          setCurrentView('game');
+        }}
+      />
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="container mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <Brain className="w-8 h-8 text-purple-600" />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800">BrainDaily</h1>
+              <p className="text-sm text-gray-600">매일 전두엽을 강화하세요</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                currentView === 'dashboard' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700'
+              }`}
+            >
+              대시보드
+            </button>
+            <button
+              onClick={() => setCurrentView('stats')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                currentView === 'stats' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700'
+              }`}
+            >
+              통계
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="max-w-4xl mx-auto">
+          {renderContent()}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Dashboard
+const DashboardView = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry }: { dailyProgram: any[]; userStats: any; onStartGame: (id: string) => void; onNavigate: (view: string) => void; onRetry: (id: string) => void }) => {
+  const completedToday = dailyProgram.filter((p: any) => p.status === 'completed').length;
+  const allCompleted = completedToday === dailyProgram.length;
+  const [selectedGameDetails, setSelectedGameDetails] = useState<DailyProgram | null>(null);
+
+  if (selectedGameDetails) {
+    return <GameDetailsView game={selectedGameDetails} onBack={() => setSelectedGameDetails(null)} onRetry={onRetry} />;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-red-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">연속 완료</p>
+              <p className="text-3xl font-bold text-gray-800">{userStats.streak}</p>
+            </div>
+            <Flame className="w-8 h-8 text-red-500" />
+          </div>
+        </div>
+        <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-blue-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">총 완료 세션</p>
+              <p className="text-3xl font-bold text-gray-800">{userStats.totalSessionsCompleted}</p>
+            </div>
+            <CheckCircle2 className="w-8 h-8 text-blue-500" />
+          </div>
+        </div>
+        <div className="bg-white rounded-lg p-6 shadow-sm border-l-4 border-purple-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">오늘 진행</p>
+              <p className="text-3xl font-bold text-gray-800">{completedToday}/5</p>
+            </div>
+            <Brain className="w-8 h-8 text-purple-500" />
+          </div>
+        </div>
+      </div>
+
+      {/* Daily Program */}
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">오늘의 인지 훈련</h2>
+        <div className="space-y-3">
+          {dailyProgram.map((game: any) => (
+            <div
+              key={game.id}
+              className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100"
+            >
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-800">{game.name}</h3>
+                <p className="text-sm text-gray-600">{game.description}</p>
+                {game.score !== undefined && (
+                  <p className="text-sm text-green-600 font-medium mt-1">점수: {game.score}</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {game.status === 'pending' ? (
+                  <button
+                    onClick={() => onStartGame(game.id)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+                  >
+                    <Play className="w-4 h-4" />
+                    시작
+                  </button>
+                ) : (
+                  <>
+                    <div className="px-4 py-2 text-green-600 font-medium flex items-center gap-1">
+                      <CheckCircle2 className="w-5 h-5" />
+                      완료
+                    </div>
+                    {game.results && (
+                      <button
+                        onClick={() => setSelectedGameDetails(game)}
+                        className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-medium text-sm"
+                      >
+                        상세보기
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {allCompleted && (
+          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+            <p className="text-green-800 font-semibold">🎉 오늘의 훈련을 모두 완료했습니다!</p>
+            <p className="text-sm text-green-700 mt-1">내일도 함께 전두엽을 강화해보세요.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 gap-4">
+        <button
+          onClick={() => onNavigate('pomodoro')}
+          className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition text-center"
+        >
+          <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+          <p className="font-semibold text-gray-800">포모도로</p>
+          <p className="text-xs text-gray-600">집중 시간 관리</p>
+        </button>
+        <button
+          onClick={() => onNavigate('stats')}
+          className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition text-center"
+        >
+          <BarChart3 className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+          <p className="font-semibold text-gray-800">통계</p>
+          <p className="text-xs text-gray-600">진행도 확인</p>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Game Renderer
+const GameRenderer = ({ gameId, onComplete }: { gameId: GameType; onComplete: (id: GameType, score: number, time: number, results?: GameResult[]) => void }) => {
+
+  switch (gameId) {
+    case 'stroop':
+      return <StroopTest onComplete={(score, time, results) => onComplete('stroop', score, time, results)} />;
+    case 'nback':
+      return <NBackGame onComplete={(score, time) => onComplete('nback', score, time)} />;
+    case 'decision':
+      return <DecisionMaking onComplete={(score, time) => onComplete('decision', score, time)} />;
+    case 'summarization':
+      return <SummarizationGame onComplete={(score, time, results) => onComplete('summarization', score, time, results)} />;
+    case 'emotion':
+      return <EmotionLabelingGame onComplete={(score, time) => onComplete('emotion', score, time)} />;
+    case 'breathing':
+      return <BreathingMeditation onComplete={(score, time) => onComplete('breathing', score, time)} />;
+    case 'ifThen':
+      return <IfThenPlanning onComplete={(score, time) => onComplete('ifThen', score, time)} />;
+  }
+};
+
+// Stroop Test
+const StroopTest = ({ onComplete }: { onComplete: (score: number, time: number, results: any) => void }) => {
+  const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+  const colorDisplay: { [key: string]: string } = { red: '빨강', blue: '파랑', green: '초록', yellow: '노랑', purple: '보라' };
+  
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [startTime] = useState(Date.now());
+  const [testEnded, setTestEnded] = useState(false);
+  const [testItems] = useState(() => {
+    const items = [];
+    for (let i = 0; i < 10; i++) {
+      const textColor = colors[Math.floor(Math.random() * colors.length)];
+      const displayColor = colors[Math.floor(Math.random() * colors.length)];
+      items.push({ text: colorDisplay[textColor], displayColor, textColorName: textColor, correct: textColor === displayColor });
+    }
+    return items;
+  });
+  const [results, setResults] = useState<GameResult[]>([]);
+
+  if (testEnded) {
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
+    const correctCount = results.filter(r => r.correct).length;
+
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg p-8 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Stroop Test 완료</h2>
+          
+          {/* 점수 요약 */}
+          <div className="mb-8 p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg text-center border border-purple-200">
+            <p className="text-gray-600 mb-2">최종 점수</p>
+            <p className="text-4xl font-bold text-purple-600 mb-2">{correctCount}/10</p>
+            <p className="text-sm text-gray-600">소요 시간: {timeTaken}초</p>
+          </div>
+
+          {/* 문제별 정답 요약 */}
+          <div className="mb-8">
+            <h3 className="font-semibold text-gray-800 mb-4">문제별 결과</h3>
+            <div className="space-y-3">
+              {results.map((result, idx) => (
+                <div
+                  key={idx}
+                  className={`p-3 rounded-lg border-l-4 ${
+                    result.correct
+                      ? 'bg-green-50 border-l-green-500 text-green-700'
+                      : 'bg-red-50 border-l-red-500 text-red-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">문제 {idx + 1}</span>
+                    <span className={result.correct ? 'text-green-600' : 'text-red-600'}>
+                      {result.correct ? '✓ 정답' : '✗ 오답'}
+                    </span>
+                  </div>
+                  <p className="text-sm mt-1">
+                    색상: <span style={{ color: result.details.displayColor }} className="font-bold">{result.details.displayColor}</span>
+                    {!result.correct && ` → 정답: ${result.details.textColorName}`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => onComplete(score, timeTaken, results)}
+            className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
+          >
+            대시보드로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const item = testItems[currentIndex];
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Stroop Test</h2>
+        <p className="text-gray-600 mb-6">글자 색상을 선택하세요 (글자 의미와 다를 수 있습니다)</p>
+        
+        <div className="mb-8">
+          <div className="text-6xl font-bold text-center mb-8" style={{ color: item.displayColor }}>
+            {item.text}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {colors.map(color => (
+              <button
+                key={color}
+                onClick={() => {
+                  const isCorrect = color === item.displayColor;
+                  if (isCorrect) {
+                    setScore(score + 1);
+                  }
+                  setResults([...results, {
+                    correct: isCorrect,
+                    details: {
+                      displayColor: item.displayColor,
+                      textColorName: item.textColorName,
+                      userAnswer: color,
+                    }
+                  }]);
+                  
+                  if (currentIndex >= testItems.length - 1) {
+                    setTestEnded(true);
+                  } else {
+                    setCurrentIndex(currentIndex + 1);
+                  }
+                }}
+                className="py-3 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition"
+              >
+                {colorDisplay[color]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${((currentIndex + 1) / testItems.length) * 100}%` }} />
+        </div>
+        <p className="text-sm text-gray-600 mt-2">{currentIndex + 1}/{testItems.length}</p>
+      </div>
+    </div>
+  );
+};
+
+// N-back Game
+const NBackGame = ({ onComplete }: { onComplete: (score: number, time: number) => void }) => {
+  const [sequence, setSequence] = useState<number[]>([]);
+  const [score, setScore] = useState(0);
+  const [startTime] = useState(Date.now());
+  const [round, setRound] = useState(0);
+  const [gameEnded, setGameEnded] = useState(false);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [feedback, setFeedback] = useState<{ correct: boolean; message: string } | null>(null);
+
+  const generateSequence = useCallback(() => {
+    const newSeq = [];
+    for (let i = 0; i < 15; i++) {
+      newSeq.push(Math.floor(Math.random() * 9)); // 0-8: 3x3 grid positions
+    }
+    return newSeq;
+  }, []);
+
+  useEffect(() => {
+    if (sequence.length === 0) {
+      setSequence(generateSequence());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAutoPlaying && round < 2) {
+      const timer = setTimeout(() => {
+        setRound(round + 1);
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else if (isAutoPlaying && round >= 2) {
+      setIsAutoPlaying(false);
+    }
+    return undefined;
+  }, [isAutoPlaying, round]);
+
+  const handleAnswer = useCallback((isMatch: boolean) => {
+    const isCorrect = (sequence[round] === sequence[round - 2]) === isMatch;
+
+    if (isCorrect) {
+      setScore(prev => prev + 1);
+      setFeedback({ correct: true, message: '✓ 정답!' });
+    } else {
+      const expected = sequence[round] === sequence[round - 2] ? '일치' : '불일치';
+      setFeedback({ correct: false, message: `✗ 오답! 정답: ${expected}` });
+    }
+
+    setTimeout(() => {
+      if (round >= 14) {
+        setGameEnded(true);
+      } else {
+        setRound(round + 1);
+        setFeedback(null);
+      }
+    }, 1200);
+  }, [round, sequence]);
+
+  if (gameEnded) {
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg p-8 shadow-sm text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">N-back Game 완료</h2>
+          <div className="mb-6">
+            <p className="text-gray-600">최종 점수</p>
+            <p className="text-4xl font-bold text-purple-600">{score}/13</p>
+            <p className="text-sm text-gray-500 mt-2">정확도: {Math.round((score / 13) * 100)}%</p>
+          </div>
+          <p className="text-gray-600 mb-6">소요 시간: {timeTaken}초</p>
+          <button
+            onClick={() => onComplete(Math.round((score / 13) * 100), timeTaken)}
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+          >
+            완료
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">N-back Game (2-back)</h2>
+        <p className="text-gray-600 mb-6">현재 위치가 2칸 전 위치와 같으면 "일치"를 누르세요</p>
+
+        <div className="mb-8 text-center">
+          {!isAutoPlaying && round < 2 && (
+            <button
+              onClick={() => setIsAutoPlaying(true)}
+              className="px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition mb-6"
+            >
+              시작하기
+            </button>
+          )}
+
+          {(isAutoPlaying || round >= 2) && round < 15 && (
+            <div className="mb-6">
+              <div className="mb-8">
+                <p className="text-sm text-gray-600 mb-4">🎯 위치를 기억하세요</p>
+
+                {/* 3x3 Grid */}
+                <div className="grid grid-cols-3 gap-3 max-w-xs mx-auto mb-6">
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((position) => (
+                    <div
+                      key={position}
+                      className={`aspect-square rounded-lg transition-all duration-300 ${
+                        sequence[round] === position
+                          ? 'bg-blue-600 shadow-lg scale-105'
+                          : 'bg-gray-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {isAutoPlaying && round < 2 && (
+                <div className="mb-6 p-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg font-semibold text-center">
+                  ℹ️ 위치를 기억하세요 ({round + 1}/2)
+                </div>
+              )}
+
+              {round >= 2 && !feedback && (
+                <div className="mb-6 p-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg font-semibold text-center">
+                  ❓ 현재 위치가 2칸 전 위치와 같나요?
+                </div>
+              )}
+
+              {feedback && (
+                <div className={`mb-6 p-3 rounded-lg font-semibold text-center ${
+                  feedback.correct
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {feedback.message}
+                </div>
+              )}
+
+              {round >= 2 && (
+                <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
+                  <button
+                    onClick={() => handleAnswer(true)}
+                    disabled={feedback !== null}
+                    className="py-4 bg-green-600 text-white text-lg rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold transition"
+                  >
+                    일치 ✓
+                  </button>
+                  <button
+                    onClick={() => handleAnswer(false)}
+                    disabled={feedback !== null}
+                    className="py-4 bg-red-600 text-white text-lg rounded-lg hover:bg-red-700 disabled:bg-gray-400 font-semibold transition"
+                  >
+                    불일치 ✗
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="bg-purple-600 h-2 rounded-full transition-all" style={{ width: `${((round + 1) / 15) * 100}%` }} />
+        </div>
+        <p className="text-sm text-gray-600 mt-2 text-center">
+          진행률: {Math.min(round + 1, 15)}/15 | 점수: {score}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Decision Making
+const DecisionMaking = ({ onComplete }: { onComplete: (score: number, time: number) => void }) => {
+  const scenarios = [
+    {
+      situation: '유튜브 숏츠를 보다가 30분이 지났습니다. 지금 이 순간 당신의 선택은?',
+      options: [
+        { text: '\'한 개만 더\' 하고 계속 본다', value: 0 },
+        { text: '앱을 끄고 원래 할 일로 돌아간다', value: 10 },
+        { text: '타이머를 5분 설정하고 조금 더 본다', value: 6 },
+      ],
+    },
+    {
+      situation: '프로젝트 마감이 3일 남았습니다. 50% 완성했고, 친구가 저녁 약속을 제안합니다.',
+      options: [
+        { text: '약속을 잡되, 내일 두 배로 집중해서 만회한다', value: 4 },
+        { text: '정중히 거절하고 작업에 집중한다', value: 10 },
+        { text: '짧게 만나고 일찍 돌아온다', value: 7 },
+      ],
+    },
+    {
+      situation: '어려운 코드 문제로 2시간째 막혀있습니다. 답답함이 극에 달합니다.',
+      options: [
+        { text: 'SNS를 보며 기분 전환을 한다', value: 2 },
+        { text: '문제를 정리하고 다른 접근법을 시도한다', value: 10 },
+        { text: '일단 다른 쉬운 작업부터 처리한다', value: 6 },
+      ],
+    },
+    {
+      situation: '자정이 넘었습니다. 지금 자면 내일 피곤하고, 더하면 오늘 일이 완성됩니다.',
+      options: [
+        { text: '완성도를 위해 끝까지 마무리한다', value: 5 },
+        { text: '지금 자고 내일 아침 일찍 일어나 마무리한다', value: 10 },
+        { text: '대충 마무리하고 잔다', value: 3 },
+      ],
+    },
+    {
+      situation: '알림이 계속 옵니다. 지금 집중이 필요한 작업 중입니다.',
+      options: [
+        { text: '알림을 확인하면서 작업한다 (멀티태스킹)', value: 2 },
+        { text: '방해금지 모드를 켜고 작업한다', value: 10 },
+        { text: '중요한 알림만 확인하고 나머지는 무시한다', value: 7 },
+      ],
+    },
+    {
+      situation: '새 아이디어가 떠올랐지만, 현재 진행 중인 일이 있습니다.',
+      options: [
+        { text: '지금 당장 새 아이디어를 시작한다', value: 3 },
+        { text: '메모만 해두고 현재 일에 집중한다', value: 10 },
+        { text: '현재 일을 빨리 대충 끝내고 새 일을 시작한다', value: 4 },
+      ],
+    },
+    {
+      situation: '온라인 쇼핑 중 한정 세일 알림이 왔습니다. 30분 후 종료됩니다.',
+      options: [
+        { text: '놓치기 아까우니까 지금 바로 구매한다', value: 2 },
+        { text: '정말 필요한지 하루 더 생각해본다', value: 10 },
+        { text: '장바구니에 담아두고 세일 종료 직전에 결정한다', value: 6 },
+      ],
+    },
+    {
+      situation: '운동하려 했는데 몸이 피곤합니다. 오늘 이미 2일 연속 안 했습니다.',
+      options: [
+        { text: '오늘은 쉬고 내일 더 열심히 한다', value: 3 },
+        { text: '10분이라도 가볍게 움직인다', value: 10 },
+        { text: '스트레칭만 하고 본 운동은 패스한다', value: 7 },
+      ],
+    },
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [startTime] = useState(Date.now());
+  const [gameEnded, setGameEnded] = useState(false);
+
+  if (gameEnded) {
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
+    const maxScore = 80; // 8 questions × 10 points
+    const percentage = Math.round((score / maxScore) * 100);
+
+    let feedback = '';
+    if (percentage >= 90) feedback = '완벽해요! 전두엽이 강력합니다 💪';
+    else if (percentage >= 75) feedback = '훌륭해요! 충동 조절이 잘 되고 있어요 👍';
+    else if (percentage >= 60) feedback = '괜찮아요! 조금씩 개선하고 있어요 ✨';
+    else feedback = '연습이 필요해요. 매일 훈련하면 좋아질 거예요 🌱';
+
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg p-8 shadow-sm text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Decision Making 완료</h2>
+          <div className="mb-6">
+            <p className="text-gray-600">최종 점수</p>
+            <p className="text-4xl font-bold text-purple-600">{score}/{maxScore}</p>
+            <p className="text-lg text-gray-700 mt-2">{percentage}%</p>
+            <p className="text-sm text-gray-600 mt-3 p-3 bg-blue-50 rounded-lg">{feedback}</p>
+          </div>
+          <p className="text-gray-600 mb-6">소요 시간: {timeTaken}초</p>
+          <button
+            onClick={() => onComplete(percentage, timeTaken)}
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+          >
+            완료
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const scenario = scenarios[currentIndex];
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Decision Making</h2>
+        <p className="text-sm text-gray-600 mb-6">숏츠와 즉각적 보상에 길들여진 뇌를 훈련합니다</p>
+
+        <div className="mb-8 p-5 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-l-4 border-purple-500">
+          <p className="text-sm text-gray-600 mb-2">상황 {currentIndex + 1}</p>
+          <p className="text-gray-800 font-semibold text-lg leading-relaxed">{scenario.situation}</p>
+        </div>
+
+        <div className="space-y-3 mb-8">
+          <p className="text-sm text-gray-600 font-medium mb-3">당신의 선택은?</p>
+          {scenario.options.map((option, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                setScore(score + option.value);
+                if (currentIndex >= scenarios.length - 1) {
+                  setGameEnded(true);
+                } else {
+                  setCurrentIndex(currentIndex + 1);
+                }
+              }}
+              className="w-full p-4 text-left bg-white hover:bg-purple-50 border-2 border-gray-200 hover:border-purple-400 rounded-lg transition-all font-medium text-gray-800 hover:shadow-md"
+            >
+              <span className="text-purple-600 font-bold mr-2">{String.fromCharCode(65 + idx)}.</span>
+              {option.text}
+            </button>
+          ))}
+        </div>
+
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="bg-purple-600 h-2 rounded-full transition-all" style={{ width: `${((currentIndex + 1) / scenarios.length) * 100}%` }} />
+        </div>
+        <p className="text-sm text-gray-600 mt-2 text-center">{currentIndex + 1}/{scenarios.length}</p>
+      </div>
+    </div>
+  );
+};
+
+// Summarization Game
+const SummarizationGame = ({ onComplete }: { onComplete: (score: number, time: number, results?: any) => void }) => {
+  const texts = [
+    {
+      text: "인터넷은 1960년대 군사 네트워크인 ARPANET에서 시작되었습니다. 초기에는 대학과 연구기관을 연결하는 목적으로 개발되었으며, 1980년대 개인용 컴퓨터의 보급과 함께 상업화되기 시작했습니다. 1990년대 월드 와이드 웹의 등장으로 인터넷은 급속도로 확산되었고, 오늘날 전 세계 수십억 명이 매일 인터넷을 사용하고 있습니다.",
+      keywords: ['인터넷', '역사', '발전'],
+    },
+    {
+      text: "숙면은 우리 건강의 필수 요소입니다. 잠 동안 뇌는 하루 동안 습득한 정보를 정리하고, 신체는 손상된 세포를 복구합니다. 충분한 수면을 취하지 못하면 면역력이 저하되고, 집중력과 기억력이 감소하며, 심리적 스트레스가 증가합니다. 전문가들은 하루 7-9시간의 규칙적인 수면을 권장합니다.",
+      keywords: ['수면', '건강', '중요성'],
+    },
+    {
+      text: "식물은 광합성을 통해 태양의 에너지를 화학 에너지로 변환합니다. 이 과정에서 물과 이산화탄소를 이용하여 포도당을 만들고 산소를 배출합니다. 이렇게 생산된 산소는 지구의 모든 생명체가 호흡하는 데 필수적이며, 포도당은 식물이 자라는 데 필요한 에너지원입니다. 따라서 식물은 지구 생태계의 기초를 이루고 있습니다.",
+      keywords: ['식물', '광합성', '생태'],
+    },
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [startTime] = useState(Date.now());
+  const [userSummary, setUserSummary] = useState('');
+  const [testEnded, setTestEnded] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [results, setResults] = useState<GameResult[]>([]);
+
+  if (testEnded) {
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
+
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg p-8 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">요약 훈련 완료</h2>
+          
+          <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg text-center border border-blue-200">
+            <p className="text-gray-600 mb-2">최종 점수</p>
+            <p className="text-4xl font-bold text-blue-600">{score}/{texts.length}</p>
+            <p className="text-sm text-gray-600 mt-2">소요 시간: {timeTaken}초</p>
+          </div>
+
+          <button
+            onClick={() => onComplete(Math.round((score / texts.length) * 100), timeTaken, results)}
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+          >
+            대시보드로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentText = texts[currentIndex];
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">요약 훈련</h2>
+        <p className="text-gray-600 mb-6">주어진 텍스트를 읽고 핵심을 한 문장(50자 이내)으로 요약하세요</p>
+
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-gray-800 mb-4">{currentText.text}</p>
+          <div className="flex gap-2 flex-wrap">
+            {currentText.keywords.map((keyword, idx) => (
+              <span key={idx} className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-sm font-medium">
+                #{keyword}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <textarea
+          value={userSummary}
+          onChange={(e) => {
+            if (e.target.value.length <= 50) {
+              setUserSummary(e.target.value);
+            }
+          }}
+          placeholder="여기에 요약을 입력하세요..."
+          className="w-full h-24 p-4 border border-gray-300 rounded-lg font-medium text-gray-800 focus:outline-none focus:border-blue-500 resize-none"
+        />
+        <p className="text-sm text-gray-600 mt-2">{userSummary.length}/50자</p>
+
+        {feedback && (
+          <div className={`mt-4 p-3 rounded-lg font-semibold ${
+            feedback.includes('좋습니다') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-blue-50 text-blue-700 border border-blue-200'
+          }`}>
+            {feedback}
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => {
+              if (userSummary.length < 10) {
+                setFeedback('최소 10자 이상 작성해주세요');
+                return;
+              }
+              const isGood = userSummary.length > 20 && currentText.keywords.some(k => userSummary.includes(k));
+              if (isGood) {
+                setScore(score + 1);
+              }
+              setResults([...results, {
+                correct: isGood,
+                details: { text: currentText.text, userSummary, isGood },
+              }]);
+
+              if (currentIndex >= texts.length - 1) {
+                setTestEnded(true);
+              } else {
+                setCurrentIndex(currentIndex + 1);
+                setUserSummary('');
+                setFeedback(null);
+              }
+            }}
+            className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold"
+          >
+            다음
+          </button>
+        </div>
+
+        <div className="w-full bg-gray-200 rounded-full h-2 mt-6">
+          <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${((currentIndex + 1) / texts.length) * 100}%` }} />
+        </div>
+        <p className="text-sm text-gray-600 mt-2">{currentIndex + 1}/{texts.length}</p>
+      </div>
+    </div>
+  );
+};
+
+// Emotion Labeling Game
+const EmotionLabelingGame = ({ onComplete }: { onComplete: (score: number, time: number) => void }) => {
+  const scenarios = [
+    {
+      situation: '새 프로젝트를 시작했는데, 갑자기 담당자가 바뀌었다',
+      emotions: ['불안', '혼란', '답답함'],
+      correct: ['불안', '혼란'],
+    },
+    {
+      situation: '진짜 하고 싶던 일을 결국 하게 되었다',
+      emotions: ['기쁨', '자신감', '희망'],
+      correct: ['기쁨', '자신감'],
+    },
+    {
+      situation: '중요한 회의에서 실수를 했고, 모두가 봤다',
+      emotions: ['부끄러움', '자책', '두려움'],
+      correct: ['부끄러움', '자책'],
+    },
+    {
+      situation: '친구가 약속을 깨뜨렸다',
+      emotions: ['분노', '배신감', '외로움'],
+      correct: ['분노', '배신감'],
+    },
+    {
+      situation: '어려운 상황을 혼자 헤쳐나갔다',
+      emotions: ['성취감', '자부심', '피로'],
+      correct: ['성취감', '자부심'],
+    },
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [startTime] = useState(Date.now());
+  const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
+  const [testEnded, setTestEnded] = useState(false);
+
+  if (testEnded) {
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg p-8 shadow-sm text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">감정 라벨링 완료</h2>
+          <div className="mb-6">
+            <p className="text-gray-600">최종 점수</p>
+            <p className="text-4xl font-bold text-purple-600">{score}/{scenarios.length}</p>
+          </div>
+          <p className="text-gray-600 mb-6">소요 시간: {timeTaken}초</p>
+          <button
+            onClick={() => onComplete(Math.round((score / scenarios.length) * 100), timeTaken)}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
+          >
+            대시보드로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const scenario = scenarios[currentIndex];
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">감정 라벨링</h2>
+        <p className="text-gray-600 mb-6">상황에서 느껴질 수 있는 감정들을 모두 선택하세요 (복수 선택 가능)</p>
+
+        <div className="mb-8 p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+          <p className="text-gray-800 font-semibold">{scenario.situation}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {scenario.emotions.map((emotion, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                if (selectedEmotions.includes(emotion)) {
+                  setSelectedEmotions(selectedEmotions.filter(e => e !== emotion));
+                } else {
+                  setSelectedEmotions([...selectedEmotions, emotion]);
+                }
+              }}
+              className={`p-4 rounded-lg font-semibold transition border-2 ${
+                selectedEmotions.includes(emotion)
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-800 border-gray-300 hover:border-purple-300'
+              }`}
+            >
+              {emotion}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => {
+            const isCorrect = 
+              selectedEmotions.length === scenario.correct.length &&
+              selectedEmotions.every(e => scenario.correct.includes(e));
+            
+            if (isCorrect) {
+              setScore(score + 1);
+            }
+
+            if (currentIndex >= scenarios.length - 1) {
+              setTestEnded(true);
+            } else {
+              setCurrentIndex(currentIndex + 1);
+              setSelectedEmotions([]);
+            }
+          }}
+          disabled={selectedEmotions.length === 0}
+          className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 transition font-semibold"
+        >
+          확인
+        </button>
+
+        <div className="w-full bg-gray-200 rounded-full h-2 mt-6">
+          <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${((currentIndex + 1) / scenarios.length) * 100}%` }} />
+        </div>
+        <p className="text-sm text-gray-600 mt-2">{currentIndex + 1}/{scenarios.length}</p>
+      </div>
+    </div>
+  );
+};
+
+// Breathing Meditation
+const BreathingMeditation = ({ onComplete }: { onComplete: (score: number, time: number) => void }) => {
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [isRunning, setIsRunning] = useState(false);
+  const [phase, setPhase] = useState<'ready' | 'inhale' | 'hold' | 'exhale'>('ready');
+  const [cycles, setCycles] = useState(0);
+
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 0) {
+          setIsRunning(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRunning]);
+
+  useEffect(() => {
+    if (!isRunning || phase === 'ready') return;
+
+    let timer: NodeJS.Timeout;
+    if (phase === 'inhale') {
+      timer = setTimeout(() => setPhase('hold'), 4000);
+    } else if (phase === 'hold') {
+      timer = setTimeout(() => setPhase('exhale'), 4000);
+    } else if (phase === 'exhale') {
+      timer = setTimeout(() => {
+        setCycles(cycles + 1);
+        setPhase('inhale');
+      }, 4000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [isRunning, phase, cycles]);
+
+  if (timeLeft === 0) {
+    const timeTaken = 60;
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg p-8 shadow-sm text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">호흡 명상 완료</h2>
+          <div className="mb-6">
+            <p className="text-gray-600 mb-2">완료한 호흡 사이클</p>
+            <p className="text-4xl font-bold text-green-600">{cycles}</p>
+          </div>
+          <p className="text-gray-600 mb-6">축하합니다! 전두엽의 '주의 제어력'을 훈련했습니다 🧘</p>
+          <button
+            onClick={() => onComplete(cycles * 20, timeTaken)}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+          >
+            대시보드로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg p-8 shadow-sm text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">호흡 명상</h2>
+        <p className="text-gray-600 mb-8">4-4-4 호흡법: 들숨(4초) → 멈춤(4초) → 날숨(4초)</p>
+
+        <div className="mb-8 p-8 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border-2 border-green-200 min-h-96 flex flex-col items-center justify-center">
+          {!isRunning && phase === 'ready' && (
+            <div>
+              <p className="text-lg text-gray-700 mb-4">편안한 자세로 앉으세요</p>
+              <p className="text-5xl font-bold text-green-600 mb-8">🧘</p>
+            </div>
+          )}
+
+          {isRunning && (
+            <>
+              <div className="text-6xl font-bold text-green-600 mb-8">
+                {phase === 'inhale' && '들숨'}
+                {phase === 'hold' && '멈춤'}
+                {phase === 'exhale' && '날숨'}
+              </div>
+              <div className="w-32 h-32 rounded-full border-4 border-green-500 flex items-center justify-center mb-8 animate-pulse">
+                <span className="text-4xl font-bold text-green-600">✓</span>
+              </div>
+            </>
+          )}
+
+          <div className="text-sm text-gray-600 mt-auto pt-8">
+            사이클: {cycles} / 남은 시간: {timeLeft}초
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsRunning(!isRunning)}
+          className={`px-8 py-4 text-lg font-semibold rounded-lg transition ${
+            isRunning
+              ? 'bg-red-600 text-white hover:bg-red-700'
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
+        >
+          {isRunning ? '일시정지' : '시작'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// IF-THEN Planning
+const IfThenPlanning = ({ onComplete }: { onComplete: (score: number, time: number) => void }) => {
+  const scenarios = [
+    {
+      trigger: '화가 날 때',
+      options: [
+        { text: '심호흡을 3번 한다', score: 10 },
+        { text: '바로 말한다', score: 1 },
+        { text: '큰 소리를 낸다', score: 0 },
+      ],
+    },
+    {
+      trigger: '집중력이 떨어질 때',
+      options: [
+        { text: '핸드폰을 확인한다', score: 0 },
+        { text: '다시 작업에 집중한다', score: 10 },
+        { text: '아무것도 하지 않는다', score: 1 },
+      ],
+    },
+    {
+      trigger: '어려운 결정을 해야 할 때',
+      options: [
+        { text: '시간을 가지고 생각한다', score: 10 },
+        { text: '급하게 결정한다', score: 1 },
+        { text: '누군가의 의견만 따른다', score: 2 },
+      ],
+    },
+    {
+      trigger: '스트레스를 받을 때',
+      options: [
+        { text: '운동하거나 산책한다', score: 10 },
+        { text: '폭식한다', score: 1 },
+        { text: '누군가에게 화풀이한다', score: 0 },
+      ],
+    },
+    {
+      trigger: '실수를 했을 때',
+      options: [
+        { text: '이유를 분석하고 개선한다', score: 10 },
+        { text: '자신을 책망한다', score: 3 },
+        { text: '무시하고 넘어간다', score: 1 },
+      ],
+    },
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [startTime] = useState(Date.now());
+  const [testEnded, setTestEnded] = useState(false);
+
+  if (testEnded) {
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg p-8 shadow-sm text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">IF-THEN 플래닝 완료</h2>
+          <div className="mb-6">
+            <p className="text-gray-600">최종 점수</p>
+            <p className="text-4xl font-bold text-orange-600">{score}/50</p>
+          </div>
+          <p className="text-gray-600 mb-6">소요 시간: {timeTaken}초</p>
+          <p className="text-sm text-gray-600 mb-6">💡 감정이 폭발하기 전 전두엽이 개입할 시간을 벌어주는 훈련입니다</p>
+          <button
+            onClick={() => onComplete(Math.round((score / 50) * 100), timeTaken)}
+            className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-semibold"
+          >
+            대시보드로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const scenario = scenarios[currentIndex];
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg p-8 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">IF-THEN 플래닝</h2>
+        <p className="text-gray-600 mb-6">상황에서 '전두엽'이 좋아할 행동을 선택하세요</p>
+
+        <div className="mb-8 p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+          <p className="text-gray-600 text-sm mb-2">상황</p>
+          <p className="text-gray-800 font-bold text-lg">{scenario.trigger}</p>
+        </div>
+
+        <div className="space-y-3 mb-6">
+          {scenario.options.map((option, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                setScore(score + option.score);
+                if (currentIndex >= scenarios.length - 1) {
+                  setTestEnded(true);
+                } else {
+                  setCurrentIndex(currentIndex + 1);
+                }
+              }}
+              className="w-full p-4 text-left bg-gray-50 hover:bg-orange-50 border-2 border-gray-200 hover:border-orange-300 rounded-lg transition font-medium text-gray-800 hover:text-orange-700"
+            >
+              THEN {option.text}
+            </button>
+          ))}
+        </div>
+
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="bg-orange-600 h-2 rounded-full" style={{ width: `${((currentIndex + 1) / scenarios.length) * 100}%` }} />
+        </div>
+        <p className="text-sm text-gray-600 mt-2">{currentIndex + 1}/{scenarios.length}</p>
+      </div>
+    </div>
+  );
+};
+
+// Game Details View
+const GameDetailsView = ({ game, onBack, onRetry }: { game: any; onBack: () => void; onRetry: (gameId: string) => void }) => {
+  const getGameTitle = (id: GameType) => {
+    switch(id) {
+      case 'stroop': return 'Stroop Test';
+      case 'nback': return 'N-back Game';
+      case 'decision': return 'Decision Making';
+      case 'summarization': return '요약 훈련';
+      case 'emotion': return '감정 라벨링';
+      case 'breathing': return '호흡 명상';
+      case 'ifThen': return 'IF-THEN 플래닝';
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <button
+          onClick={onBack}
+          className="mb-6 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+        >
+          ← 돌아가기
+        </button>
+
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">{getGameTitle(game.id)}</h2>
+        
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="p-3 bg-purple-50 rounded-lg text-center border border-purple-200">
+            <p className="text-xs text-gray-600">점수</p>
+            <p className="text-2xl font-bold text-purple-600">{game.score}</p>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg text-center border border-blue-200">
+            <p className="text-xs text-gray-600">소요시간</p>
+            <p className="text-2xl font-bold text-blue-600">{game.time}초</p>
+          </div>
+          <div className="p-3 bg-green-50 rounded-lg text-center border border-green-200">
+            <p className="text-xs text-gray-600">정답률</p>
+            <p className="text-2xl font-bold text-green-600">
+              {game.results ? Math.round((game.results.filter((r: any) => r.correct).length / game.results.length) * 100) : 0}%
+            </p>
+          </div>
+        </div>
+
+        {game.results && (
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-4">문제별 정답 결과</h3>
+            <div className="space-y-3">
+              {game.results.map((result: any, idx: number) => (
+                <div
+                  key={idx}
+                  className={`p-4 rounded-lg border-l-4 ${
+                    result.correct
+                      ? 'bg-green-50 border-l-green-500'
+                      : 'bg-red-50 border-l-red-500'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-800">문제 {idx + 1}</span>
+                    <span className={result.correct ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                      {result.correct ? '✓ 정답' : '✗ 오답'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700">
+                    {game.id === 'stroop' && `색상: ${result.details.displayColor}`}
+                    {!result.correct && game.id === 'stroop' && ` → 정답: ${result.details.textColorName}`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-8">
+          <button
+            onClick={() => onRetry(game.id)}
+            className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
+          >
+            🔄 다시하기
+          </button>
+          <button
+            onClick={onBack}
+            className="flex-1 px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Pomodoro Timer
+const PomodoroTimer = () => {
+  const [workDuration] = useState(25);
+  const [breakDuration] = useState(5);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isWorkSession, setIsWorkSession] = useState(true);
+  const [timeLeft, setTimeLeft] = useState(workDuration * 60);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (isRunning && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft(timeLeft - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      setIsWorkSession(!isWorkSession);
+      setTimeLeft((!isWorkSession ? workDuration : breakDuration) * 60);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, timeLeft, isWorkSession, workDuration, breakDuration]);
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg p-8 shadow-sm text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">포모도로 타이머</h2>
+        
+        <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+          <p className="text-lg text-gray-600 mb-4">{isWorkSession ? '집중 시간' : '휴식 시간'}</p>
+          <div className="text-6xl font-bold text-gray-800 font-mono mb-4">
+            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+          </div>
+        </div>
+
+        <div className="flex gap-3 justify-center mb-6">
+          <button
+            onClick={() => setIsRunning(!isRunning)}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
+          >
+            {isRunning ? '일시정지' : '시작'}
+          </button>
+          <button
+            onClick={() => {
+              setIsRunning(false);
+              setTimeLeft(workDuration * 60);
+              setIsWorkSession(true);
+            }}
+            className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition font-semibold"
+          >
+            리셋
+          </button>
+        </div>
+
+        <p className="text-sm text-gray-600">
+          💡 집중이 필요할 때마다 포모도로를 사용하세요. 25분 집중 → 5분 휴식 반복
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Statistics View
+const StatisticsView = ({ userStats }: { userStats: any }) => {
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">통계</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="p-4 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg border border-red-100">
+            <p className="text-sm text-gray-600 mb-2">🔥 현재 연속 완료</p>
+            <p className="text-4xl font-bold text-red-600">{userStats.streak}</p>
+            <p className="text-xs text-gray-600 mt-2">일</p>
+          </div>
+          <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-100">
+            <p className="text-sm text-gray-600 mb-2">✅ 총 완료 세션</p>
+            <p className="text-4xl font-bold text-blue-600">{userStats.totalSessionsCompleted}</p>
+            <p className="text-xs text-gray-600 mt-2">세션</p>
+          </div>
+        </div>
+
+        <div className="border-t pt-6">
+          <h3 className="font-semibold text-gray-800 mb-4">각 게임별 최근 점수</h3>
+          <div className="space-y-4">
+            {Object.entries(userStats.scores).map(([game, scores]: [string, any]) => (
+              <div key={game}>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  {game === 'stroop' ? 'Stroop Test' : game === 'nback' ? 'N-back Game' : game === 'decision' ? 'Decision Making' : game === 'summarization' ? '요약 훈련' : game === 'emotion' ? '감정 라벨링' : game === 'breathing' ? '호흡 명상' : 'IF-THEN 플래닝'}
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {scores.slice(-5).map((score: number, idx: number) => (
+                    <div
+                      key={idx}
+                      className="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full font-medium"
+                    >
+                      {score}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <h3 className="font-semibold text-gray-800 mb-4">💡 팁</h3>
+        <ul className="space-y-2 text-sm text-gray-700">
+          <li>• 매일 같은 시간에 훈련을 하면 효과가 좋습니다</li>
+          <li>• 연속 완료를 통해 동기부여를 유지하세요</li>
+          <li>• 각 게임의 점수가 올라갈수록 전두엽이 강화되고 있습니다</li>
+          <li>• 숏츠 시청 시간을 줄이고 이 훈련으로 대체해보세요</li>
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+export default BrainDaily;
