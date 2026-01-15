@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DailyHistory, GameType } from "../types";
+import Dropdown from "../components/Dropdown";
 
 interface StatisticsProps {
   userStats: any;
@@ -69,21 +70,21 @@ const Statistics = ({ userStats }: StatisticsProps) => {
 
           {sortedHistory.length > 0 && (
             <div className="mb-6">
-              <label className="text-sm text-gray-400 mb-2 block">
-                날짜 선택
-              </label>
-              <select
+              <Dropdown
+                label="날짜 선택"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full md:w-auto md:min-w-[240px] px-4 py-3 bg-black/40 border border-gray-600 rounded-xl text-white font-medium focus:outline-none focus:border-gray-500"
-              >
-                <option value="">최근 7일</option>
-                {sortedHistory.map((history) => (
-                  <option key={history.date} value={history.date}>
-                    {formatDate(history.date)} ({history.games.length}개 게임)
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedDate}
+                placeholder="최근 7일"
+                options={[
+                  { value: "", label: "최근 7일" },
+                  ...sortedHistory.map((history) => ({
+                    value: history.date,
+                    label: `${formatDate(history.date)} (${
+                      history.games.length
+                    }개 게임)`,
+                  })),
+                ]}
+              />
             </div>
           )}
 
