@@ -2,6 +2,8 @@
 
 전두엽을 매일 강화하는 인지 훈련 서비스입니다.
 
+🌐 **배포 주소**: https://sumzdev.github.io/brain-daily/
+
 ## 설치 및 실행
 
 ```bash
