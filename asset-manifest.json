@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/brain-daily/static/css/main.977cc707.css",
-    "main.js": "/brain-daily/static/js/main.b5ce1e83.js",
+    "main.css": "/brain-daily/static/css/main.4e4b5f03.css",
+    "main.js": "/brain-daily/static/js/main.74c2568f.js",
     "index.html": "/brain-daily/index.html",
-    "main.977cc707.css.map": "/brain-daily/static/css/main.977cc707.css.map",
-    "main.b5ce1e83.js.map": "/brain-daily/static/js/main.b5ce1e83.js.map"
+    "main.4e4b5f03.css.map": "/brain-daily/static/css/main.4e4b5f03.css.map",
+    "main.74c2568f.js.map": "/brain-daily/static/js/main.74c2568f.js.map"
   },
   "entrypoints": [
-    "static/css/main.977cc707.css",
-    "static/js/main.b5ce1e83.js"
+    "static/css/main.4e4b5f03.css",
+    "static/js/main.74c2568f.js"
   ]
 }
