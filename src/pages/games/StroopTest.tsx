@@ -123,7 +123,7 @@ const StroopTest = ({ onComplete }: StroopTestProps) => {
               <button
                 key={color}
                 onClick={() => handleAnswer(color)}
-                className="w-full py-4 px-6 bg-black/40 hover:bg-gray-700 text-white rounded-xl font-bold transition border border-gray-600 btn-glow-white"
+                className="w-full py-3 px-6 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 font-bold border border-gray-600"
               >
                 {colorDisplay[color]}
               </button>

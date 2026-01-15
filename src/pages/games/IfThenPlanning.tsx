@@ -119,7 +119,7 @@ const IfThenPlanning = ({ onComplete }: IfThenPlanningProps) => {
                   setSearchParams({ step: (currentIndex + 1).toString() });
                 }
               }}
-              className="w-full p-5 text-left bg-black/40 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 rounded-xl transition font-medium text-white btn-glow-purple"
+              className="w-full p-5 text-left bg-white text-black rounded-lg hover:bg-gray-200 transition-all duration-200 font-bold btn-glow-white"
             >
               THEN {option.text}
             </button>

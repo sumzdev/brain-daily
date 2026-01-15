@@ -21,7 +21,7 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry }
   }
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 shadow-xl border border-gray-700 hover:border-red-500/50 transition-all duration-300">
@@ -76,7 +76,7 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry }
                 {game.status === 'pending' ? (
                   <button
                     onClick={() => onStartGame(game.id)}
-                    className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center gap-2 font-bold btn-glow-white"
+                    className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 flex items-center gap-2 font-bold border border-gray-600"
                   >
                     <Play className="w-4 h-4" />
                     시작

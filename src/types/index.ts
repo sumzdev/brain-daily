@@ -16,11 +16,22 @@ export interface DailyProgram {
   results?: GameResult[];
 }
 
+export interface DailyHistory {
+  date: string;
+  games: {
+    id: GameType;
+    score: number;
+    time: number;
+    completedAt: string;
+  }[];
+}
+
 export interface UserStats {
   streak: number;
   totalSessionsCompleted: number;
   lastCompletedDate: string;
   scores: Record<string, number[]>;
+  history: DailyHistory[];
 }
 
 export interface GameProps {

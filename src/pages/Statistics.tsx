@@ -1,10 +1,41 @@
+import { useState } from 'react';
+import { DailyHistory, GameType } from '../types';
+
 interface StatisticsProps {
   userStats: any;
 }
 
 const Statistics = ({ userStats }: StatisticsProps) => {
+  const [selectedDate, setSelectedDate] = useState<string>('');
+
+  const getGameName = (id: GameType) => {
+    const names: Record<GameType, string> = {
+      stroop: 'Stroop Test',
+      nback: 'N-back Game',
+      decision: 'Decision Making',
+      summarization: '요약 훈련',
+      emotion: '감정 라벨링',
+      breathing: '호흡 명상',
+      ifThen: 'IF-THEN 플래닝',
+    };
+    return names[id] || id;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+  };
+
+  const sortedHistory = [...(userStats.history || [])].sort((a, b) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  const filteredHistory = selectedDate
+    ? sortedHistory.filter(h => h.date === selectedDate)
+    : sortedHistory.slice(0, 7); // 최근 7일
+
   return (
-    <div className="space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8">
       <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 shadow-xl border border-gray-700">
         <h2 className="text-4xl font-extrabold text-white mb-10 tracking-tight">통계</h2>
 
@@ -27,39 +58,77 @@ const Statistics = ({ userStats }: StatisticsProps) => {
 
         <div className="border-t border-gray-700 pt-8">
           <h3 className="text-2xl font-bold text-white mb-6">
-            각 게임별 최근 점수
+            일자별 기록
           </h3>
-          <div className="space-y-5">
-            {Object.entries(userStats.scores).map(
-              ([game, scores]: [string, any]) => (
-                <div key={game} className="bg-black/40 p-5 rounded-xl border border-gray-700">
-                  <p className="text-base font-semibold text-gray-300 mb-3">
-                    {game === "stroop"
-                      ? "Stroop Test"
-                      : game === "nback"
-                      ? "N-back Game"
-                      : game === "decision"
-                      ? "Decision Making"
-                      : game === "summarization"
-                      ? "요약 훈련"
-                      : game === "emotion"
-                      ? "감정 라벨링"
-                      : game === "breathing"
-                      ? "호흡 명상"
-                      : "IF-THEN 플래닝"}
-                  </p>
-                  <div className="flex gap-3 flex-wrap">
-                    {scores.slice(-5).map((score: number, idx: number) => (
+
+          {sortedHistory.length > 0 && (
+            <div className="mb-6">
+              <label className="text-sm text-gray-400 mb-2 block">날짜 선택</label>
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full md:w-auto px-4 py-3 bg-black/40 border border-gray-600 rounded-xl text-white font-medium focus:outline-none focus:border-gray-500"
+              >
+                <option value="">최근 7일</option>
+                {sortedHistory.map((history) => (
+                  <option key={history.date} value={history.date}>
+                    {formatDate(history.date)} ({history.games.length}개 게임)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="space-y-6">
+            {filteredHistory.length === 0 ? (
+              <div className="text-center py-10 text-gray-400">
+                <p>아직 기록이 없습니다.</p>
+                <p className="text-sm mt-2">첫 게임을 시작해보세요!</p>
+              </div>
+            ) : (
+              filteredHistory.map((dayHistory: DailyHistory) => (
+                <div key={dayHistory.date} className="bg-black/40 p-6 rounded-xl border border-gray-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-bold text-white">
+                      {formatDate(dayHistory.date)}
+                    </h4>
+                    <span className="text-sm text-gray-400">
+                      {dayHistory.games.length}개 게임 완료
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {dayHistory.games.map((game, idx) => (
                       <div
                         key={idx}
-                        className="px-4 py-2 bg-purple-500/20 text-purple-300 text-sm rounded-lg font-bold border border-purple-500/30"
+                        className="flex items-center justify-between p-4 bg-gray-900/50 rounded-lg border border-gray-700/50"
                       >
-                        {score}
+                        <div className="flex-1">
+                          <p className="font-semibold text-white mb-1">
+                            {getGameName(game.id)}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(game.completedAt).toLocaleTimeString('ko-KR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </div>
+                        <div className="flex gap-3 items-center">
+                          <div className="text-right">
+                            <p className="text-sm text-gray-400">점수</p>
+                            <p className="text-lg font-bold text-purple-400">{game.score}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-400">시간</p>
+                            <p className="text-lg font-bold text-blue-400">{game.time}초</p>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
-              )
+              ))
             )}
           </div>
         </div>

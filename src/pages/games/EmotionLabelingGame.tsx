@@ -93,10 +93,10 @@ const EmotionLabelingGame = ({ onComplete }: EmotionLabelingGameProps) => {
                   setSelectedEmotions([...selectedEmotions, emotion]);
                 }
               }}
-              className={`p-5 rounded-xl font-bold transition border ${
+              className={`p-5 rounded-lg font-bold transition-all duration-200 btn-glow-white ${
                 selectedEmotions.includes(emotion)
-                  ? 'bg-white text-black border-white'
-                  : 'bg-black/40 text-white border-gray-600 hover:border-gray-500'
+                  ? 'bg-white text-black border-4 border-purple-500'
+                  : 'bg-white text-black hover:bg-gray-200 border-4 border-transparent'
               }`}
             >
               {emotion}

@@ -31,6 +31,7 @@ const App = () => {
       totalSessionsCompleted: 0,
       lastCompletedDate: '',
       scores: {},
+      history: [],
     };
   });
 
@@ -57,14 +58,44 @@ const App = () => {
       p.id === id ? { ...p, status: 'completed', score, time, results } : p
     ));
 
-    setUserStats(prev => ({
-      ...prev,
-      totalSessionsCompleted: prev.totalSessionsCompleted + 1,
-      scores: {
-        ...prev.scores,
-        [id]: [...(prev.scores[id] || []), score].slice(-10),
-      },
-    }));
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const now = new Date().toISOString();
+
+    setUserStats(prev => {
+      const history = [...prev.history];
+      const todayIndex = history.findIndex(h => h.date === today);
+
+      if (todayIndex >= 0) {
+        // 오늘 날짜가 이미 있으면 게임 추가
+        history[todayIndex].games.push({
+          id,
+          score,
+          time,
+          completedAt: now,
+        });
+      } else {
+        // 오늘 날짜가 없으면 새로 생성
+        history.push({
+          date: today,
+          games: [{
+            id,
+            score,
+            time,
+            completedAt: now,
+          }],
+        });
+      }
+
+      return {
+        ...prev,
+        totalSessionsCompleted: prev.totalSessionsCompleted + 1,
+        scores: {
+          ...prev.scores,
+          [id]: [...(prev.scores[id] || []), score].slice(-10),
+        },
+        history: history.slice(-30), // 최근 30일만 저장
+      };
+    });
 
     navigate('/');
   };
