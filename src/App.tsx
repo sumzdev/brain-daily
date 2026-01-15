@@ -100,6 +100,59 @@ const App = () => {
     navigate('/');
   };
 
+  const generateDummyData = () => {
+    const gameTypes: GameType[] = ['stroop', 'nback', 'decision', 'summarization', 'emotion'];
+    const getRandomScore = () => Math.floor(Math.random() * 50) + 50;
+    const getRandomTime = () => Math.floor(Math.random() * 100) + 20;
+
+    const history = [];
+
+    // 최근 10일간의 데이터 생성
+    for (let i = 0; i < 10; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateString = date.toISOString().split('T')[0];
+
+      const numGames = Math.floor(Math.random() * 4) + 2;
+      const games = [];
+
+      for (let j = 0; j < numGames; j++) {
+        const gameType = gameTypes[Math.floor(Math.random() * gameTypes.length)];
+        const completedAt = new Date(date);
+        completedAt.setHours(9 + j * 2, Math.floor(Math.random() * 60), 0);
+
+        games.push({
+          id: gameType,
+          score: getRandomScore(),
+          time: getRandomTime(),
+          completedAt: completedAt.toISOString()
+        });
+      }
+
+      history.push({
+        date: dateString,
+        games: games
+      });
+    }
+
+    // 점수 히스토리 생성
+    const scores: Record<string, number[]> = {};
+    gameTypes.forEach(type => {
+      scores[type] = Array.from({ length: 10 }, () => Math.floor(Math.random() * 50) + 50);
+    });
+
+    const dummyStats = {
+      streak: 5,
+      totalSessionsCompleted: history.reduce((sum, day) => sum + day.games.length, 0),
+      lastCompletedDate: new Date().toDateString(),
+      scores: scores,
+      history: history
+    };
+
+    setUserStats(dummyStats);
+    alert('✅ 더미 데이터가 생성되었습니다!');
+  };
+
   return (
     <div className="min-h-screen bg-black">
       <div className="container mx-auto px-6 py-12 max-w-7xl">
@@ -128,6 +181,7 @@ const App = () => {
                 onStartGame={(gameId) => navigate(`/games/${gameId}?step=0`)}
                 onNavigate={(view) => navigate(`/${view}`)}
                 onRetry={(gameId) => navigate(`/games/${gameId}?step=0`)}
+                onGenerateDummyData={generateDummyData}
               />
             }
           />

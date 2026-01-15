@@ -9,9 +9,10 @@ interface DashboardProps {
   onStartGame: (id: string) => void;
   onNavigate: (view: string) => void;
   onRetry: (id: string) => void;
+  onGenerateDummyData: () => void;
 }
 
-const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry }: DashboardProps) => {
+const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry, onGenerateDummyData }: DashboardProps) => {
   const completedToday = dailyProgram.filter((p: any) => p.status === 'completed').length;
   const allCompleted = completedToday === dailyProgram.length;
   const [selectedGameDetails, setSelectedGameDetails] = useState<DailyProgram | null>(null);
@@ -127,6 +128,16 @@ const Dashboard = ({ dailyProgram, userStats, onStartGame, onNavigate, onRetry }
           <BarChart3 className="w-10 h-10 text-purple-500 mx-auto mb-4 group-hover:scale-110 transition" />
           <p className="font-bold text-white text-lg mb-1">통계</p>
           <p className="text-xs text-gray-400 uppercase tracking-wide">진행도 확인</p>
+        </button>
+      </div>
+
+      {/* Dummy Data Button */}
+      <div className="flex justify-center">
+        <button
+          onClick={onGenerateDummyData}
+          className="px-6 py-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-all duration-200 text-sm font-medium border border-gray-700"
+        >
+          🎲 더미 데이터 생성 (테스트용)
         </button>
       </div>
     </div>

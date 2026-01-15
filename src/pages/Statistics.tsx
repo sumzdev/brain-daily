@@ -1,22 +1,22 @@
-import { useState } from 'react';
-import { DailyHistory, GameType } from '../types';
+import { useState } from "react";
+import { DailyHistory, GameType } from "../types";
 
 interface StatisticsProps {
   userStats: any;
 }
 
 const Statistics = ({ userStats }: StatisticsProps) => {
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>("");
 
   const getGameName = (id: GameType) => {
     const names: Record<GameType, string> = {
-      stroop: 'Stroop Test',
-      nback: 'N-back Game',
-      decision: 'Decision Making',
-      summarization: '요약 훈련',
-      emotion: '감정 라벨링',
-      breathing: '호흡 명상',
-      ifThen: 'IF-THEN 플래닝',
+      stroop: "Stroop Test",
+      nback: "N-back Game",
+      decision: "Decision Making",
+      summarization: "요약 훈련",
+      emotion: "감정 라벨링",
+      breathing: "호흡 명상",
+      ifThen: "IF-THEN 플래닝",
     };
     return names[id] || id;
   };
@@ -26,48 +26,56 @@ const Statistics = ({ userStats }: StatisticsProps) => {
     return `${date.getMonth() + 1}월 ${date.getDate()}일`;
   };
 
-  const sortedHistory = [...(userStats.history || [])].sort((a, b) =>
-    new Date(b.date).getTime() - new Date(a.date).getTime()
+  const sortedHistory = [...(userStats.history || [])].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   const filteredHistory = selectedDate
-    ? sortedHistory.filter(h => h.date === selectedDate)
+    ? sortedHistory.filter((h) => h.date === selectedDate)
     : sortedHistory.slice(0, 7); // 최근 7일
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 shadow-xl border border-gray-700">
-        <h2 className="text-4xl font-extrabold text-white mb-10 tracking-tight">통계</h2>
+        <h2 className="text-4xl font-extrabold text-white mb-10 tracking-tight">
+          통계
+        </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           <div className="p-8 bg-gradient-to-br from-red-900/30 to-orange-900/30 rounded-xl border border-red-500/30">
-            <p className="text-sm text-gray-400 uppercase tracking-wide mb-3">🔥 현재 연속 완료</p>
+            <p className="text-sm text-gray-400 uppercase tracking-wide mb-3">
+              🔥 현재 연속 완료
+            </p>
             <p className="text-6xl font-extrabold text-white mb-2">
               {userStats.streak}
             </p>
             <p className="text-xs text-gray-500 uppercase tracking-wider">일</p>
           </div>
           <div className="p-8 bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-xl border border-blue-500/30">
-            <p className="text-sm text-gray-400 uppercase tracking-wide mb-3">✅ 총 완료 세션</p>
+            <p className="text-sm text-gray-400 uppercase tracking-wide mb-3">
+              ✅ 총 완료 세션
+            </p>
             <p className="text-6xl font-extrabold text-white mb-2">
               {userStats.totalSessionsCompleted}
             </p>
-            <p className="text-xs text-gray-500 uppercase tracking-wider">세션</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">
+              세션
+            </p>
           </div>
         </div>
 
         <div className="border-t border-gray-700 pt-8">
-          <h3 className="text-2xl font-bold text-white mb-6">
-            일자별 기록
-          </h3>
+          <h3 className="text-2xl font-bold text-white mb-6">일자별 기록</h3>
 
           {sortedHistory.length > 0 && (
             <div className="mb-6">
-              <label className="text-sm text-gray-400 mb-2 block">날짜 선택</label>
+              <label className="text-sm text-gray-400 mb-2 block">
+                날짜 선택
+              </label>
               <select
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full md:w-auto px-4 py-3 bg-black/40 border border-gray-600 rounded-xl text-white font-medium focus:outline-none focus:border-gray-500"
+                className="w-full md:w-auto md:min-w-[240px] px-4 py-3 bg-black/40 border border-gray-600 rounded-xl text-white font-medium focus:outline-none focus:border-gray-500"
               >
                 <option value="">최근 7일</option>
                 {sortedHistory.map((history) => (
@@ -87,7 +95,10 @@ const Statistics = ({ userStats }: StatisticsProps) => {
               </div>
             ) : (
               filteredHistory.map((dayHistory: DailyHistory) => (
-                <div key={dayHistory.date} className="bg-black/40 p-6 rounded-xl border border-gray-700">
+                <div
+                  key={dayHistory.date}
+                  className="bg-black/40 p-6 rounded-xl border border-gray-700"
+                >
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-bold text-white">
                       {formatDate(dayHistory.date)}
@@ -108,20 +119,27 @@ const Statistics = ({ userStats }: StatisticsProps) => {
                             {getGameName(game.id)}
                           </p>
                           <p className="text-xs text-gray-400">
-                            {new Date(game.completedAt).toLocaleTimeString('ko-KR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
+                            {new Date(game.completedAt).toLocaleTimeString(
+                              "ko-KR",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
                           </p>
                         </div>
                         <div className="flex gap-3 items-center">
                           <div className="text-right">
                             <p className="text-sm text-gray-400">점수</p>
-                            <p className="text-lg font-bold text-purple-400">{game.score}</p>
+                            <p className="text-lg font-bold text-purple-400">
+                              {game.score}
+                            </p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm text-gray-400">시간</p>
-                            <p className="text-lg font-bold text-blue-400">{game.time}초</p>
+                            <p className="text-lg font-bold text-blue-400">
+                              {game.time}초
+                            </p>
                           </div>
                         </div>
                       </div>
